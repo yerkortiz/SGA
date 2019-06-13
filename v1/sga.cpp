@@ -1,6 +1,6 @@
-/* versión 1 del sga, mutación con bitflip, 
-cromosoma como un vector de 0's y 1's */
-/* Compilar usando c++17, sl2 */
+//Yerko Ortiz
+//2019
+//C++17 
 #include <iostream>
 #include <vector>
 #include <algorithm>
@@ -15,21 +15,32 @@ typedef vector<int> vctr;
 typedef pair<int, vctr> individual;
 typedef vector<individual> pop;
 
-const int POP_SIZE = 400;
-const double MUT_RATE = 0.1;
-const int CROSS_RATE = 50;
-const int GEN_SIZE = 5;
-const int MAX_IT = 50;
-const vctr TARGET {1,1,1,1,1};
-/*Los 1's y 0's son parte de la función fitness con la
-que se hará la comparación, los 2 son considerados simbolos 
-de indiferencia en la evaluación del individuo.*/
+const int POP_SIZE = 100;//Tamaño de la poblacion
+const double MUT_RATE = 0.1;//Rate de mutaciones
+const int CROSS_RATE = 50;//Rate de crossover
+const int GEN_SIZE = 5;//Tamaño del gen(target)
+const int MAX_IT = 100;//Numero de iteraciones
+const int N_EXPERIMENTS = 30; // Numero de csv's a generar
+const int TARGET[] {1,1,1,1,1};//Combinacion buscada
+/*
+  0 -> no quiero que exista proteina en el target[i]
+  1 -> quiero que exista una proteina en el target[i]
+  2 -> soy indiferente si hay o no hay proteina en el target[i]
+*/
+const string PATH_OUTPUT = "/Users/Yerko/codes/sga/sga/experiments/crossover/25";
+/*  
+    Path de escritura(Especificar solamente la carpeta)
+    Los archivos se generan y guardan de manera automatica
+*/
+
+
 void print_population(pop &population){
     for(int i(0); i < POP_SIZE; ++i){
-        cout<<"Gen "<<i + 1<<": [";
+        cout<<"Gen "<<i + 1<<": ";
         for(int j(0); j < GEN_SIZE; ++j){
             cout<<population[i].second[j];
-            cout<<(j == GEN_SIZE - 1? "] ": ", ");
+            //cout<<(j == GEN_SIZE - 1? "] ": ", ");
+            cout<<' ';
         }
         cout<<"Valor: "<<population[i].first<<'\n';
     }
@@ -66,18 +77,16 @@ void crossover(vctr &p1, vctr &p2, vctr &offspring){
     }
 }
 string new_generation(pop &population, int it){
-    
-    //print_population(population);
     pop auxpop;
-    /* 
-    int best_individual = (10*POP_SIZE)/100;
-    for(int i(0); i < best_individual; ++i){
+    int best_fraction = (10 * POP_SIZE) / 100;
+    for(int i(0); i < best_fraction; ++i){
         auxpop.push_back(population[i]);
-    }*/
+    }
     string s = "";
     int c(0);
-    int fittest_individual = (CROSS_RATE*POP_SIZE)/100;
-    for(int i(0); i < POP_SIZE; ++i){
+    int fittest_individual = (CROSS_RATE * POP_SIZE) / 100;
+    int cross_fraction = 90 * POP_SIZE / 100;
+    for(int i(0); i < cross_fraction; ++i){
         int index1 = rnd_int(0, fittest_individual);
         int index2 = rnd_int(0, fittest_individual);
         vctr offspring(GEN_SIZE, 0);
@@ -91,34 +100,32 @@ string new_generation(pop &population, int it){
         auxpop.push_back(make_pair(f_value, offspring));
     }
     population = auxpop;
-    s = to_string(it);
-    s += ", ";
-    s += to_string(c);
-    s += '\n';
-    return s;
+    return to_string(it) + ", " + to_string(c) + '\n';
 }
-int main(){
-    for(int k(0); k < 30; ++k){
+int main(){    
+    for(int k(0); k < 10; ++k){ 
     fstream file;
     string s_index = to_string(k + 1);
-    file.open("/Users/Yerko/codes/sga/experiments/n_bacterias/400/simu" + s_index + ".txt", fstream::out);
+    file.open(PATH_OUTPUT + "/simu" + s_index + ".csv", fstream::out);
     pop population(POP_SIZE);
     int c(0);
     for(int i(0); i < POP_SIZE; ++i){
         vctr v(GEN_SIZE);
-        for(int j(0); j < GEN_SIZE; ++j) v[j] = rnd_int(0, 1);
+        v[rnd_int(0, GEN_SIZE - 1)] = 1;
         int f_value = fitness_evaluation(v);
         if (f_value == 0) c++;
         population[i] = make_pair(f_value, v);
     }
-    string s = "0, " + to_string(c) + "\n";
+    //print_population(population);
+    //cout<<to_string(c)<<'\n';
+    string s = s_index + ", " + (to_string(c)) + "\n";
     file<<s;
     //print_population(population);
     for(int i(0); i < MAX_IT; ++i){
         sort(population.begin(), population.end());
-        file<<new_generation(population, i + 1);
+        file<<new_generation(population, i + 2);
     } 
-    sort(population.begin(), population.end());
+    sort(population.begin(), population.end());  
     file.close();
     }
     return 0;
